@@ -10,6 +10,9 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Header } from "@/components/header";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
+import ProductCreate from "./pages/ProductCreate";
+import Categories from "./pages/Categories";
+import StockManagement from "./pages/StockManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

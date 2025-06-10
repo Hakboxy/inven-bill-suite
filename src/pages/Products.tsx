@@ -28,15 +28,19 @@ import {
   Package,
   AlertTriangle,
   CheckCircle,
-  XCircle
+  XCircle,
+  LayoutGrid,
+  List
 } from "lucide-react"
 import { products, type Product } from "@/constants/dummyData"
 import { Link } from "react-router-dom"
+import { ProductCard } from "@/components/ProductCard"
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -65,10 +69,14 @@ export default function Products() {
     return <Badge variant="secondary">Inactive</Badge>
   }
 
-  const getStockStatus = (product: Product) => {
-    if (product.stock === 0) return "out-of-stock"
-    if (product.stock <= product.lowStockThreshold) return "low-stock"
-    return "in-stock"
+  const handleEditProduct = (product: Product) => {
+    console.log('Edit product:', product)
+    // Navigate to edit page or open modal
+  }
+
+  const handleDuplicateProduct = (product: Product) => {
+    console.log('Duplicate product:', product)
+    // Create a copy of the product
   }
 
   const filteredProducts = products.filter((product) => {
@@ -146,11 +154,31 @@ export default function Products() {
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Filters and View Toggle */}
       <Card>
         <CardHeader>
-          <CardTitle>Product Catalog</CardTitle>
-          <CardDescription>Browse and manage your products</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Product Catalog</CardTitle>
+              <CardDescription>Browse and manage your products</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -191,71 +219,84 @@ export default function Products() {
             </Select>
           </div>
 
-          {/* Products Table */}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProducts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        {getStatusIcon(product.status, product.stock)}
-                        <div>
-                          <p className="font-medium">{product.name}</p>
-                          <p className="text-sm text-muted-foreground truncate max-w-[200px]">
-                            {product.description}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">{product.sku}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{product.category}</Badge>
-                    </TableCell>
-                    <TableCell>{formatCurrency(product.price)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <span className={`font-medium ${
-                          product.stock === 0 ? "text-red-600" :
-                          product.stock <= product.lowStockThreshold ? "text-yellow-600" :
-                          "text-green-600"
-                        }`}>
-                          {product.stock}
-                        </span>
-                        {product.stock <= product.lowStockThreshold && product.stock > 0 && (
-                          <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(product.status, product.stock)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          {/* Products Display */}
+          {viewMode === 'grid' ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onEdit={handleEditProduct}
+                  onDuplicate={handleDuplicateProduct}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Stock</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {filteredProducts.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          {getStatusIcon(product.status, product.stock)}
+                          <div>
+                            <p className="font-medium">{product.name}</p>
+                            <p className="text-sm text-muted-foreground truncate max-w-[200px]">
+                              {product.description}
+                            </p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">{product.sku}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{product.category}</Badge>
+                      </TableCell>
+                      <TableCell>{formatCurrency(product.price)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <span className={`font-medium ${
+                            product.stock === 0 ? "text-red-600" :
+                            product.stock <= product.lowStockThreshold ? "text-yellow-600" :
+                            "text-green-600"
+                          }`}>
+                            {product.stock}
+                          </span>
+                          {product.stock <= product.lowStockThreshold && product.stock > 0 && (
+                            <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(product.status, product.stock)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <Button variant="ghost" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
 
           {filteredProducts.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
