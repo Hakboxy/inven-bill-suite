@@ -13,6 +13,8 @@ import Products from "./pages/Products";
 import ProductCreate from "./pages/ProductCreate";
 import Categories from "./pages/Categories";
 import StockManagement from "./pages/StockManagement";
+import Invoices from "./pages/Invoices";
+import InvoiceCreate from "./pages/InvoiceCreate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

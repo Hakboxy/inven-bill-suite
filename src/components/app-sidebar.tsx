@@ -89,7 +89,7 @@ const menuGroups = [
       },
       {
         title: "Stock Management",
-        url: "/inventory",
+        url: "/inventory/stock",
         icon: Package,
       },
       {
