@@ -1,14 +1,12 @@
-
 import {
   BookPlus,
   LayoutDashboard,
-  Product,
+  Package,
   FileText,
   Users,
   TrendingUp,
   Settings,
   HelpCircle,
-  Package,
   CreditCard,
   ShoppingCart,
   BarChart3,
@@ -82,7 +80,7 @@ const menuGroups = [
       {
         title: "Products",
         url: "/products",
-        icon: Product,
+        icon: Package,
       },
       {
         title: "Categories",
