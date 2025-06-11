@@ -11,8 +11,8 @@ import { CreateFinancialReportModal } from "@/components/CreateFinancialReportMo
 
 const FinancialReports = () => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [reportTypeFilter, setReportTypeFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [reportTypeFilter, setReportTypeFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   // Mock data
@@ -45,8 +45,8 @@ const FinancialReports = () => {
 
   const filteredReports = financialReports.filter(report => {
     const matchesSearch = report.reportName.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = !reportTypeFilter || report.reportType === reportTypeFilter
-    const matchesStatus = !statusFilter || report.status === statusFilter
+    const matchesType = reportTypeFilter === 'all' || report.reportType === reportTypeFilter
+    const matchesStatus = statusFilter === 'all' || report.status === statusFilter
     return matchesSearch && matchesType && matchesStatus
   })
 
@@ -103,7 +103,7 @@ const FinancialReports = () => {
                 <SelectValue placeholder="Report Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="Income Statement">Income Statement</SelectItem>
                 <SelectItem value="Balance Sheet">Balance Sheet</SelectItem>
                 <SelectItem value="Cash Flow">Cash Flow</SelectItem>
@@ -114,7 +114,7 @@ const FinancialReports = () => {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="Completed">Completed</SelectItem>
                 <SelectItem value="In Progress">In Progress</SelectItem>
                 <SelectItem value="Failed">Failed</SelectItem>
