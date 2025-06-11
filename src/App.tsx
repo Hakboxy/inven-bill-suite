@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +19,9 @@ import SalesOrders from "./pages/SalesOrders";
 import Customers from "./pages/Customers";
 import Vendors from "./pages/Vendors";
 import CustomerGroups from "./pages/CustomerGroups";
+import FinancialReports from "./pages/FinancialReports";
+import TaxReports from "./pages/TaxReports";
+import InventoryReports from "./pages/InventoryReports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +53,9 @@ const App = () => (
                     <Route path="/customers" element={<Customers />} />
                     <Route path="/vendors" element={<Vendors />} />
                     <Route path="/customer-groups" element={<CustomerGroups />} />
+                    <Route path="/reports/financial" element={<FinancialReports />} />
+                    <Route path="/reports/tax" element={<TaxReports />} />
+                    <Route path="/reports/inventory" element={<InventoryReports />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
