@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +15,8 @@ import Categories from "./pages/Categories";
 import StockManagement from "./pages/StockManagement";
 import Invoices from "./pages/Invoices";
 import InvoiceCreate from "./pages/InvoiceCreate";
+import Payments from "./pages/Payments";
+import SalesOrders from "./pages/SalesOrders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +43,8 @@ const App = () => (
                     <Route path="/inventory/stock" element={<StockManagement />} />
                     <Route path="/invoices" element={<Invoices />} />
                     <Route path="/invoices/create" element={<InvoiceCreate />} />
+                    <Route path="/payments" element={<Payments />} />
+                    <Route path="/sales-orders" element={<SalesOrders />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
