@@ -10,8 +10,8 @@ import { CreateInventoryReportModal } from "@/components/CreateInventoryReportMo
 
 const InventoryReports = () => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [warehouseFilter, setWarehouseFilter] = useState('')
-  const [reportTypeFilter, setReportTypeFilter] = useState('')
+  const [warehouseFilter, setWarehouseFilter] = useState('all')
+  const [reportTypeFilter, setReportTypeFilter] = useState('all')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   // Mock data
@@ -41,8 +41,8 @@ const InventoryReports = () => {
 
   const filteredReports = inventoryReports.filter(report => {
     const matchesSearch = report.reportName.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesWarehouse = !warehouseFilter || report.warehouse === warehouseFilter
-    const matchesType = !reportTypeFilter || report.reportType === reportTypeFilter
+    const matchesWarehouse = warehouseFilter === 'all' || report.warehouse === warehouseFilter
+    const matchesType = reportTypeFilter === 'all' || report.reportType === reportTypeFilter
     return matchesSearch && matchesWarehouse && matchesType
   })
 
@@ -94,7 +94,7 @@ const InventoryReports = () => {
                 <SelectValue placeholder="Warehouse" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Warehouses</SelectItem>
+                <SelectItem value="all">All Warehouses</SelectItem>
                 <SelectItem value="Main Warehouse">Main Warehouse</SelectItem>
                 <SelectItem value="Secondary Warehouse">Secondary Warehouse</SelectItem>
                 <SelectItem value="Distribution Center">Distribution Center</SelectItem>
@@ -105,7 +105,7 @@ const InventoryReports = () => {
                 <SelectValue placeholder="Report Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="Stock Summary">Stock Summary</SelectItem>
                 <SelectItem value="Stock Movement">Stock Movement</SelectItem>
                 <SelectItem value="Low Stock">Low Stock</SelectItem>
