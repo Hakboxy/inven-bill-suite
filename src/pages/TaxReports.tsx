@@ -11,8 +11,8 @@ import { CreateTaxReportModal } from "@/components/CreateTaxReportModal"
 
 const TaxReports = () => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [taxTypeFilter, setTaxTypeFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [taxTypeFilter, setTaxTypeFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   // Mock data
@@ -45,8 +45,8 @@ const TaxReports = () => {
 
   const filteredReports = taxReports.filter(report => {
     const matchesSearch = report.reportName.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = !taxTypeFilter || report.taxType === taxTypeFilter
-    const matchesStatus = !statusFilter || report.status === statusFilter
+    const matchesType = taxTypeFilter === 'all' || report.taxType === taxTypeFilter
+    const matchesStatus = statusFilter === 'all' || report.status === statusFilter
     return matchesSearch && matchesType && matchesStatus
   })
 
@@ -103,7 +103,7 @@ const TaxReports = () => {
                 <SelectValue placeholder="Tax Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="VAT">VAT</SelectItem>
                 <SelectItem value="GST">GST</SelectItem>
                 <SelectItem value="Income Tax">Income Tax</SelectItem>
@@ -115,7 +115,7 @@ const TaxReports = () => {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="Filed">Filed</SelectItem>
                 <SelectItem value="In Progress">In Progress</SelectItem>
                 <SelectItem value="Overdue">Overdue</SelectItem>
