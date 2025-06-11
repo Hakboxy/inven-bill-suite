@@ -17,6 +17,9 @@ import Invoices from "./pages/Invoices";
 import InvoiceCreate from "./pages/InvoiceCreate";
 import Payments from "./pages/Payments";
 import SalesOrders from "./pages/SalesOrders";
+import Customers from "./pages/Customers";
+import Vendors from "./pages/Vendors";
+import CustomerGroups from "./pages/CustomerGroups";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
