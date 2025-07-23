@@ -60,11 +60,7 @@ export const useDashboard = () => {
           .select('id, invoice_number, customer_name, customer_id, issue_date, due_date, total_amount, status')
           .order('created_at', { ascending: false })
           .limit(5),
-        supabase
-          .from('products')
-          .select('id, name, sku, stock, low_stock_threshold')
-          .filter('stock', 'lte', 'low_stock_threshold')
-          .limit(10)
+        supabase.rpc('get_low_stock_products')
       ])
 
       // Calculate stats

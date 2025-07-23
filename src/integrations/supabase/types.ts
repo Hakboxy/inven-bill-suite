@@ -610,6 +610,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_low_stock_products: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          sku: string
+          stock: number
+          low_stock_threshold: number
+        }[]
+      }
     }
     Enums: {
       invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"

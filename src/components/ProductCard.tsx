@@ -13,7 +13,7 @@ import {
   XCircle 
 } from "lucide-react"
 import { Link } from "react-router-dom"
-import type { Product } from "@/constants/dummyData"
+import type { Product } from "@/hooks/useProducts"
 
 interface ProductCardProps {
   product: Product
@@ -41,7 +41,7 @@ export function ProductCard({ product, onEdit, onDuplicate }: ProductCardProps) 
         label: 'Out of Stock'
       }
     }
-    if (product.stock <= product.lowStockThreshold) {
+    if (product.stock <= product.low_stock_threshold) {
       return { 
         status: 'low-stock', 
         color: 'text-yellow-600', 
@@ -67,9 +67,9 @@ export function ProductCard({ product, onEdit, onDuplicate }: ProductCardProps) 
       <CardContent className="p-4 flex-1">
         {/* Product Image */}
         <div className="relative mb-4 bg-muted rounded-lg overflow-hidden aspect-square">
-          {!imageError && product.image ? (
+          {!imageError && product.image_url ? (
             <img
-              src={product.image}
+              src={product.image_url}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
               onError={() => setImageError(true)}
@@ -115,7 +115,7 @@ export function ProductCard({ product, onEdit, onDuplicate }: ProductCardProps) 
           {/* Category and Status */}
           <div className="flex flex-wrap gap-1">
             <Badge variant="outline" className="text-xs">
-              {product.category}
+              {product.category?.name || 'No Category'}
             </Badge>
             <Badge 
               variant={product.status === 'active' ? 'default' : 'secondary'}

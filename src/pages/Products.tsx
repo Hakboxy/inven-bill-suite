@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { 
   Table,
   TableBody,
@@ -32,11 +33,12 @@ import {
   LayoutGrid,
   List
 } from "lucide-react"
-import { products, type Product } from "@/constants/dummyData"
 import { Link } from "react-router-dom"
 import { ProductCard } from "@/components/ProductCard"
+import { useProducts, type Product } from "@/hooks/useProducts"
 
 export default function Products() {
+  const { products, loading, error, deleteProduct } = useProducts()
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -79,21 +81,72 @@ export default function Products() {
     // Create a copy of the product
   }
 
+  const handleDeleteProduct = async (product: Product) => {
+    if (confirm(`Are you sure you want to delete ${product.name}?`)) {
+      await deleteProduct(product.id)
+    }
+  }
+
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.sku.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = categoryFilter === "all" || product.category === categoryFilter
+    const matchesCategory = categoryFilter === "all" || product.category?.name === categoryFilter
     const matchesStatus = statusFilter === "all" || product.status === statusFilter
     
     return matchesSearch && matchesCategory && matchesStatus
   })
 
-  const categories = Array.from(new Set(products.map(p => p.category)))
+  const categories = Array.from(new Set(products.map(p => p.category?.name).filter(Boolean)))
 
   const totalProducts = products.length
   const activeProducts = products.filter(p => p.status === 'active').length
-  const lowStockProducts = products.filter(p => p.stock <= p.lowStockThreshold).length
+  const lowStockProducts = products.filter(p => p.stock <= p.low_stock_threshold).length
   const outOfStockProducts = products.filter(p => p.stock === 0).length
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Products</h1>
+            <p className="text-muted-foreground">Manage your product catalog and inventory</p>
+          </div>
+          <Button asChild>
+            <Link to="/products/create">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Product
+            </Link>
+          </Button>
+        </div>
+        
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-8">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-red-600">Error loading products</h2>
+          <p className="text-muted-foreground">{error}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -261,19 +314,19 @@ export default function Products() {
                       </TableCell>
                       <TableCell className="font-mono text-sm">{product.sku}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{product.category}</Badge>
+                        <Badge variant="outline">{product.category?.name || 'No Category'}</Badge>
                       </TableCell>
                       <TableCell>{formatCurrency(product.price)}</TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <span className={`font-medium ${
                             product.stock === 0 ? "text-red-600" :
-                            product.stock <= product.lowStockThreshold ? "text-yellow-600" :
+                            product.stock <= product.low_stock_threshold ? "text-yellow-600" :
                             "text-green-600"
                           }`}>
                             {product.stock}
                           </span>
-                          {product.stock <= product.lowStockThreshold && product.stock > 0 && (
+                          {product.stock <= product.low_stock_threshold && product.stock > 0 && (
                             <AlertTriangle className="h-3 w-3 text-yellow-500" />
                           )}
                         </div>
@@ -283,10 +336,18 @@ export default function Products() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end space-x-2">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEditProduct(product)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDeleteProduct(product)}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>

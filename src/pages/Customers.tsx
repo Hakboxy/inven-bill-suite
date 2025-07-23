@@ -4,57 +4,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Plus, Filter } from "lucide-react"
+import { Search, Plus, AlertTriangle } from "lucide-react"
 import { CreateCustomerModal } from "@/components/CreateCustomerModal"
-
-interface Customer {
-  id: string
-  name: string
-  email: string
-  phone: string
-  customerGroup: string
-  status: 'active' | 'inactive'
-}
-
-const mockCustomers: Customer[] = [
-  {
-    id: 'CUST-001',
-    name: 'John Smith',
-    email: 'john.smith@email.com',
-    phone: '+1 234-567-8900',
-    customerGroup: 'Premium',
-    status: 'active'
-  },
-  {
-    id: 'CUST-002',
-    name: 'Sarah Johnson',
-    email: 'sarah.johnson@email.com',
-    phone: '+1 234-567-8901',
-    customerGroup: 'Standard',
-    status: 'active'
-  },
-  {
-    id: 'CUST-003',
-    name: 'Mike Wilson',
-    email: 'mike.wilson@email.com',
-    phone: '+1 234-567-8902',
-    customerGroup: 'VIP',
-    status: 'inactive'
-  },
-  {
-    id: 'CUST-004',
-    name: 'Emily Davis',
-    email: 'emily.davis@email.com',
-    phone: '+1 234-567-8903',
-    customerGroup: 'Standard',
-    status: 'active'
-  }
-]
+import { useCustomers } from "@/hooks/useCustomers"
 
 const Customers = () => {
-  const [customers, setCustomers] = useState<Customer[]>(mockCustomers)
+  const { customers, loading, error, createCustomer, deleteCustomer } = useCustomers()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [groupFilter, setGroupFilter] = useState<string>('all')
@@ -62,30 +20,82 @@ const Customers = () => {
 
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.phone.includes(searchTerm)
+                         customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         customer.phone?.includes(searchTerm)
     
     const matchesStatus = statusFilter === 'all' || customer.status === statusFilter
-    const matchesGroup = groupFilter === 'all' || customer.customerGroup === groupFilter
+    const matchesGroup = groupFilter === 'all' || customer.customer_groups?.name === groupFilter
     
     return matchesSearch && matchesStatus && matchesGroup
   })
 
   const getStatusBadge = (status: string) => {
     return status === 'active' ? (
-      <Badge variant="default" className="bg-green-100 text-green-800">Active</Badge>
+      <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Active</Badge>
     ) : (
       <Badge variant="secondary">Inactive</Badge>
     )
   }
 
-  const handleCreateCustomer = (customerData: any) => {
-    const newCustomer: Customer = {
-      id: `CUST-${String(customers.length + 1).padStart(3, '0')}`,
-      ...customerData
+  const handleCreateCustomer = async (customerData: any) => {
+    try {
+      await createCustomer(customerData)
+      setIsCreateModalOpen(false)
+    } catch (error) {
+      console.error('Failed to create customer:', error)
     }
-    setCustomers([...customers, newCustomer])
-    setIsCreateModalOpen(false)
+  }
+
+  const handleDeleteCustomer = async (customerId: string) => {
+    if (confirm('Are you sure you want to delete this customer?')) {
+      try {
+        await deleteCustomer(customerId)
+      } catch (error) {
+        console.error('Failed to delete customer:', error)
+      }
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
+            <p className="text-muted-foreground">Manage your customer database</p>
+          </div>
+          <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Customer
+          </Button>
+        </div>
+        
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-20" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-8">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-red-600">Error loading customers</h2>
+          <p className="text-muted-foreground">{error}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -123,21 +133,24 @@ const Customers = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Premium Customers</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {customers.filter(c => c.customerGroup === 'Premium').length}
+              ${customers.reduce((sum, c) => sum + (c.total_spent || 0), 0).toFixed(2)}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">VIP Customers</CardTitle>
+            <CardTitle className="text-sm font-medium">Average Order Value</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {customers.filter(c => c.customerGroup === 'VIP').length}
+              ${customers.length > 0 ? 
+                (customers.reduce((sum, c) => sum + (c.total_spent || 0), 0) / 
+                 customers.reduce((sum, c) => sum + c.total_orders, 0) || 0).toFixed(2) : 
+                '0.00'}
             </div>
           </CardContent>
         </Card>
@@ -176,37 +189,55 @@ const Customers = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Groups</SelectItem>
-                <SelectItem value="Standard">Standard</SelectItem>
                 <SelectItem value="Premium">Premium</SelectItem>
+                <SelectItem value="Standard">Standard</SelectItem>
                 <SelectItem value="VIP">VIP</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Customer Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Customer Group</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCustomers.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell>{customer.email}</TableCell>
-                  <TableCell>{customer.phone}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{customer.customerGroup}</Badge>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(customer.status)}</TableCell>
+          {filteredCustomers.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No customers found matching your criteria.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Total Orders</TableHead>
+                  <TableHead>Total Spent</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredCustomers.map((customer) => (
+                  <TableRow key={customer.id}>
+                    <TableCell className="font-medium">{customer.name}</TableCell>
+                    <TableCell>{customer.email || 'N/A'}</TableCell>
+                    <TableCell>{customer.phone || 'N/A'}</TableCell>
+                    <TableCell>{customer.company || 'N/A'}</TableCell>
+                    <TableCell>{customer.total_orders}</TableCell>
+                    <TableCell>${customer.total_spent?.toFixed(2) || '0.00'}</TableCell>
+                    <TableCell>{getStatusBadge(customer.status)}</TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleDeleteCustomer(customer.id)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
