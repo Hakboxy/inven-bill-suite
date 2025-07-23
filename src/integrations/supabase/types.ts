@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          setting_key: string
+          setting_type: string | null
+          setting_value: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_type?: string | null
+          setting_value?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_type?: string | null
+          setting_value?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -34,6 +64,51 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      company_settings: {
+        Row: {
+          company_address: string | null
+          company_email: string | null
+          company_name: string
+          company_phone: string | null
+          created_at: string | null
+          currency: string | null
+          fiscal_year_start: string | null
+          id: string
+          logo_url: string | null
+          tax_id: string | null
+          timezone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_address?: string | null
+          company_email?: string | null
+          company_name: string
+          company_phone?: string | null
+          created_at?: string | null
+          currency?: string | null
+          fiscal_year_start?: string | null
+          id?: string
+          logo_url?: string | null
+          tax_id?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_address?: string | null
+          company_email?: string | null
+          company_name?: string
+          company_phone?: string | null
+          created_at?: string | null
+          currency?: string | null
+          fiscal_year_start?: string | null
+          id?: string
+          logo_url?: string | null
+          tax_id?: string | null
+          timezone?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -120,6 +195,126 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      financial_reports: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          end_date: string
+          id: string
+          net_profit: number | null
+          report_name: string
+          report_type: string
+          start_date: string
+          total_expenses: number | null
+          total_revenue: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          end_date: string
+          id?: string
+          net_profit?: number | null
+          report_name: string
+          report_type: string
+          start_date: string
+          total_expenses?: number | null
+          total_revenue?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          end_date?: string
+          id?: string
+          net_profit?: number | null
+          report_name?: string
+          report_type?: string
+          start_date?: string
+          total_expenses?: number | null
+          total_revenue?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      integrations: {
+        Row: {
+          api_key: string | null
+          api_secret: string | null
+          configuration: Json | null
+          created_at: string | null
+          id: string
+          integration_name: string
+          integration_type: string
+          is_active: boolean | null
+          updated_at: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          api_key?: string | null
+          api_secret?: string | null
+          configuration?: Json | null
+          created_at?: string | null
+          id?: string
+          integration_name: string
+          integration_type: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          api_key?: string | null
+          api_secret?: string | null
+          configuration?: Json | null
+          created_at?: string | null
+          id?: string
+          integration_name?: string
+          integration_type?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
+      inventory_reports: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          low_stock_items: number | null
+          out_of_stock_items: number | null
+          report_name: string
+          report_type: string
+          total_products: number | null
+          total_stock_value: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          low_stock_items?: number | null
+          out_of_stock_items?: number | null
+          report_name: string
+          report_type: string
+          total_products?: number | null
+          total_stock_value?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          low_stock_items?: number | null
+          out_of_stock_items?: number | null
+          report_name?: string
+          report_type?: string
+          total_products?: number | null
+          total_stock_value?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       invoice_items: {
         Row: {
@@ -559,6 +754,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tax_reports: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          end_date: string
+          id: string
+          report_name: string
+          start_date: string
+          status: string | null
+          tax_amount: number | null
+          tax_period: string
+          tax_rate: number | null
+          taxable_income: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          end_date: string
+          id?: string
+          report_name: string
+          start_date: string
+          status?: string | null
+          tax_amount?: number | null
+          tax_period: string
+          tax_rate?: number | null
+          taxable_income?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          end_date?: string
+          id?: string
+          report_name?: string
+          start_date?: string
+          status?: string | null
+          tax_amount?: number | null
+          tax_period?: string
+          tax_rate?: number | null
+          taxable_income?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       vendors: {
         Row: {
