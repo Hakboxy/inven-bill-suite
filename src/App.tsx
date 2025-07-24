@@ -8,6 +8,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Header } from "@/components/header";
+import { AuthRoute } from "@/components/AuthRoute";
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import ProductCreate from "./pages/ProductCreate";
@@ -38,36 +40,46 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <SidebarProvider>
-            <div className="min-h-screen flex w-full">
-              <AppSidebar />
-              <div className="flex-1 flex flex-col">
-                <Header />
-                <main className="flex-1 p-6">
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/products" element={<Products />} />
-                    <Route path="/products/create" element={<ProductCreate />} />
-                    <Route path="/products/add" element={<ProductCreate />} />
-                    <Route path="/categories" element={<Categories />} />
-                    <Route path="/inventory/stock" element={<StockManagement />} />
-                    <Route path="/invoices" element={<Invoices />} />
-                    <Route path="/invoices/create" element={<InvoiceCreate />} />
-                    <Route path="/payments" element={<Payments />} />
-                    <Route path="/sales-orders" element={<SalesOrders />} />
-                    <Route path="/customers" element={<Customers />} />
-                    <Route path="/vendors" element={<Vendors />} />
-                    <Route path="/customer-groups" element={<CustomerGroups />} />
-                    <Route path="/reports/financial" element={<FinancialReports />} />
-                    <Route path="/reports/tax" element={<TaxReports />} />
-                    <Route path="/reports/inventory" element={<InventoryReports />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </main>
-              </div>
-            </div>
-          </SidebarProvider>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/*" element={
+              <AuthRoute>
+                <SidebarProvider>
+                  <div className="min-h-screen flex w-full">
+                    <AppSidebar />
+                    <div className="flex-1 flex flex-col">
+                      <Header />
+                      <main className="flex-1 p-6">
+                        <Routes>
+                          <Route path="/" element={<Dashboard />} />
+                          <Route path="/products" element={<Products />} />
+                          <Route path="/products/create" element={<ProductCreate />} />
+                          <Route path="/products/add" element={<ProductCreate />} />
+                          <Route path="/categories" element={<Categories />} />
+                          <Route path="/inventory/stock" element={<StockManagement />} />
+                          <Route path="/invoices" element={<Invoices />} />
+                          <Route path="/invoices/create" element={<InvoiceCreate />} />
+                          <Route path="/payments" element={<Payments />} />
+                          <Route path="/sales-orders" element={<SalesOrders />} />
+                          <Route path="/customers" element={<Customers />} />
+                          <Route path="/vendors" element={<Vendors />} />
+                          <Route path="/customer-groups" element={<CustomerGroups />} />
+                          <Route path="/reports/financial" element={<FinancialReports />} />
+                          <Route path="/reports/tax" element={<TaxReports />} />
+                          <Route path="/reports/inventory" element={<InventoryReports />} />
+                          <Route path="/settings/company" element={<CompanySettings />} />
+                          <Route path="/settings/users" element={<UserManagement />} />
+                          <Route path="/settings/integrations" element={<Integrations />} />
+                          <Route path="/settings/general" element={<GeneralSettings />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </main>
+                    </div>
+                  </div>
+                </SidebarProvider>
+              </AuthRoute>
+            } />
+          </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>

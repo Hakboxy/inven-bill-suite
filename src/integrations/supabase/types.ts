@@ -850,6 +850,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
       get_low_stock_products: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -859,6 +863,10 @@ export type Database = {
           stock: number
           low_stock_threshold: number
         }[]
+      }
+      has_role: {
+        Args: { _role: Database["public"]["Enums"]["user_role"] }
+        Returns: boolean
       }
     }
     Enums: {
