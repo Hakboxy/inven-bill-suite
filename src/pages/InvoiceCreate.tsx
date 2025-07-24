@@ -1,6 +1,7 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Plus,
   Trash2,
@@ -23,8 +25,12 @@ import {
   Calculator,
   User,
   Calendar,
+  Loader2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useCustomers } from "@/hooks/useCustomers";
+import { useInvoices, CreateInvoiceData } from "@/hooks/useInvoices";
+import { useToast } from "@/hooks/use-toast";
 
 interface InvoiceItem {
   description: string;
@@ -34,6 +40,7 @@ interface InvoiceItem {
 }
 
 interface InvoiceFormData {
+  customerId: string;
   customerName: string;
   customerEmail: string;
   customerAddress: string;
@@ -54,6 +61,13 @@ interface InvoiceFormData {
 
 export default function InvoiceCreate() {
   const [previewMode, setPreviewMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { customers, loading: customersLoading } = useCustomers();
+  const { createInvoice, updateInvoice, fetchInvoiceById } = useInvoices();
+  const isEditing = Boolean(id);
   
   const {
     register,
@@ -61,6 +75,7 @@ export default function InvoiceCreate() {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<InvoiceFormData>({
     defaultValues: {
@@ -71,6 +86,16 @@ export default function InvoiceCreate() {
       taxRate: 10,
       discountType: "percentage",
       discountValue: 0,
+      customerId: "",
+      customerName: "",
+      customerEmail: "",
+      customerAddress: "",
+      subtotal: 0,
+      taxAmount: 0,
+      discountAmount: 0,
+      total: 0,
+      notes: "",
+      terms: "",
     },
   });
 
@@ -111,9 +136,100 @@ export default function InvoiceCreate() {
     });
   }, [watchedItems, watchedTaxRate, watchedDiscountType, watchedDiscountValue, setValue]);
 
-  const onSubmit = (data: InvoiceFormData) => {
-    console.log("Invoice data:", data);
-    // Handle invoice creation
+  // Load invoice data if editing
+  useEffect(() => {
+    if (isEditing && id) {
+      const loadInvoice = async () => {
+        const { invoice, items } = await fetchInvoiceById(id);
+        if (invoice) {
+          const invoiceItems = items.map(item => ({
+            description: item.product_name,
+            quantity: item.quantity,
+            rate: item.unit_price,
+            amount: item.total_price
+          }));
+
+          reset({
+            customerId: invoice.customer_id,
+            customerName: invoice.customer_name,
+            customerEmail: invoice.customer_email || "",
+            customerAddress: invoice.customer_address || "",
+            invoiceNumber: invoice.invoice_number,
+            issueDate: invoice.issue_date,
+            dueDate: invoice.due_date,
+            items: invoiceItems.length > 0 ? invoiceItems : [{ description: "", quantity: 1, rate: 0, amount: 0 }],
+            taxRate: invoice.tax_rate,
+            discountType: "fixed" as const,
+            discountValue: invoice.discount_amount,
+            subtotal: invoice.subtotal,
+            taxAmount: invoice.tax_amount,
+            discountAmount: invoice.discount_amount,
+            total: invoice.total_amount,
+            notes: invoice.notes || "",
+            terms: invoice.terms || "",
+          });
+        }
+      };
+      loadInvoice();
+    }
+  }, [isEditing, id, fetchInvoiceById, reset]);
+
+  const onSubmit = async (data: InvoiceFormData, status: 'draft' | 'sent' = 'draft') => {
+    if (!data.customerId && !data.customerName) {
+      toast({
+        title: "Customer required",
+        description: "Please select or enter a customer name",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const invoiceData: CreateInvoiceData = {
+        invoice_number: data.invoiceNumber,
+        customer_id: data.customerId || '',
+        customer_name: data.customerName,
+        customer_email: data.customerEmail,
+        customer_address: data.customerAddress,
+        issue_date: data.issueDate,
+        due_date: data.dueDate,
+        subtotal: data.subtotal,
+        tax_rate: data.taxRate,
+        tax_amount: data.taxAmount,
+        discount_amount: data.discountAmount,
+        total_amount: data.total,
+        status,
+        notes: data.notes,
+        terms: data.terms,
+        items: data.items.map(item => ({
+          product_name: item.description,
+          quantity: item.quantity,
+          unit_price: item.rate,
+          total_price: item.amount
+        }))
+      };
+
+      if (isEditing && id) {
+        await updateInvoice(id, invoiceData);
+      } else {
+        await createInvoice(invoiceData);
+      }
+
+      navigate('/invoices');
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveDraft = () => {
+    handleSubmit((data) => onSubmit(data, 'draft'))();
+  };
+
+  const handleCreateInvoice = () => {
+    handleSubmit((data) => onSubmit(data, 'sent'))();
   };
 
   const formatCurrency = (amount: number) => {
@@ -121,6 +237,28 @@ export default function InvoiceCreate() {
       style: 'currency',
       currency: 'USD'
     }).format(amount || 0);
+  };
+
+  // Customer selection logic
+  const customerOptions = customers.map(customer => ({
+    label: customer.name,
+    value: customer.id
+  }));
+
+  const handleCustomerSelect = (customerId: string) => {
+    const customer = customers.find(c => c.id === customerId);
+    if (customer) {
+      setValue("customerId", customer.id);
+      setValue("customerName", customer.name);
+      setValue("customerEmail", customer.email || "");
+      setValue("customerAddress", customer.address || "");
+    } else {
+      // Custom customer name
+      setValue("customerId", "");
+      setValue("customerName", customerId);
+      setValue("customerEmail", "");
+      setValue("customerAddress", "");
+    }
   };
 
   if (previewMode) {
@@ -132,13 +270,13 @@ export default function InvoiceCreate() {
             Back to Edit
           </Button>
           <div className="flex gap-2">
-            <Button variant="outline">
-              <Save className="h-4 w-4 mr-2" />
+            <Button variant="outline" onClick={handleSaveDraft} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
               Save Draft
             </Button>
-            <Button>
-              <Send className="h-4 w-4 mr-2" />
-              Send Invoice
+            <Button onClick={handleCreateInvoice} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+              {isEditing ? 'Update Invoice' : 'Create Invoice'}
             </Button>
           </div>
         </div>
@@ -259,9 +397,11 @@ export default function InvoiceCreate() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Create Invoice</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {isEditing ? 'Edit Invoice' : 'Create Invoice'}
+          </h1>
           <p className="text-muted-foreground">
-            Create a new invoice for your customer
+            {isEditing ? 'Update invoice details' : 'Create a new invoice for your customer'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -277,7 +417,7 @@ export default function InvoiceCreate() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit((data) => onSubmit(data, 'draft'))} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Customer Information */}
           <Card className="lg:col-span-2">
@@ -291,11 +431,22 @@ export default function InvoiceCreate() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="customerName">Customer Name *</Label>
-                  <Input
-                    id="customerName"
-                    {...register("customerName", { required: "Customer name is required" })}
-                    placeholder="Enter customer name"
-                  />
+                  {customersLoading ? (
+                    <div className="flex items-center justify-center h-10 border rounded-md">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : (
+                    <Combobox
+                      options={customerOptions}
+                      value={watch("customerId") || watch("customerName")}
+                      onValueChange={handleCustomerSelect}
+                      placeholder="Select customer or enter name..."
+                      searchPlaceholder="Search customers..."
+                      emptyText="No customers found."
+                      allowCustom={true}
+                      className="w-full"
+                    />
+                  )}
                   {errors.customerName && (
                     <p className="text-sm text-red-600">{errors.customerName.message}</p>
                   )}
@@ -555,15 +706,26 @@ export default function InvoiceCreate() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline">
-            <Save className="h-4 w-4 mr-2" />
-            Save Draft
-          </Button>
-          <Button type="submit">
-            <Send className="h-4 w-4 mr-2" />
-            Create & Send
-          </Button>
+        <div className="flex justify-between">
+          <Link to="/invoices">
+            <Button variant="outline">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Invoices
+            </Button>
+          </Link>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setPreviewMode(true)}>
+              Preview
+            </Button>
+            <Button variant="outline" onClick={handleSaveDraft} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              Save Draft
+            </Button>
+            <Button type="button" onClick={handleCreateInvoice} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+              {isEditing ? 'Update Invoice' : 'Create Invoice'}
+            </Button>
+          </div>
         </div>
       </form>
     </div>
