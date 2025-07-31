@@ -31,7 +31,8 @@ import {
   TrendingUp,
   Minus
 } from "lucide-react"
-import { products } from "@/constants/dummyData"
+import { useProducts } from '@/hooks/useProducts';
+import { useStockMovements } from '@/hooks/useStockMovements';
 
 interface StockMovement {
   id: string
@@ -86,6 +87,8 @@ const stockMovements: StockMovement[] = [
 ]
 
 export default function StockManagement() {
+  const { products, loading } = useProducts();
+  const { stockMovements } = useStockMovements();
   const [searchTerm, setSearchTerm] = useState("")
   const [movementTypeFilter, setMovementTypeFilter] = useState("all")
   const [activeTab, setActiveTab] = useState<'overview' | 'movements'>('overview')
@@ -100,9 +103,11 @@ export default function StockManagement() {
 
   const getMovementIcon = (type: string) => {
     switch (type) {
-      case 'in':
+      case 'purchase':
+      case 'return':
         return <TrendingUp className="h-4 w-4 text-green-600" />
-      case 'out':
+      case 'sale':
+      case 'transfer':
         return <TrendingDown className="h-4 w-4 text-red-600" />
       case 'adjustment':
         return <Minus className="h-4 w-4 text-yellow-600" />
@@ -113,28 +118,32 @@ export default function StockManagement() {
 
   const getMovementBadge = (type: string) => {
     switch (type) {
-      case 'in':
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Stock In</Badge>
-      case 'out':
-        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">Stock Out</Badge>
+      case 'purchase':
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Purchase</Badge>
+      case 'sale':
+        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">Sale</Badge>
       case 'adjustment':
         return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">Adjustment</Badge>
+      case 'return':
+        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">Return</Badge>
+      case 'transfer':
+        return <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">Transfer</Badge>
       default:
         return <Badge variant="secondary">{type}</Badge>
     }
   }
 
   const filteredMovements = stockMovements.filter((movement) => {
-    const matchesSearch = movement.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         movement.reason.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = movementTypeFilter === "all" || movement.type === movementTypeFilter
+    const matchesSearch = movement.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (movement.reason && movement.reason.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesType = movementTypeFilter === "all" || movement.movement_type === movementTypeFilter
     
     return matchesSearch && matchesType
   })
 
-  const lowStockProducts = products.filter(p => p.stock <= p.lowStockThreshold)
+  const lowStockProducts = products.filter(p => p.stock <= p.low_stock_threshold)
   const outOfStockProducts = products.filter(p => p.stock === 0)
-  const totalStockValue = products.reduce((sum, p) => sum + (p.stock * p.cost), 0)
+  const totalStockValue = products.reduce((sum, p) => sum + (p.stock * (p.cost || 0)), 0)
 
   return (
     <div className="space-y-6">
@@ -238,14 +247,14 @@ export default function StockManagement() {
                     The following products are running low on stock:
                   </p>
                   <div className="space-y-2">
-                    {lowStockProducts.map((product) => (
-                      <div key={product.id} className="flex justify-between items-center bg-white dark:bg-gray-800 rounded p-2">
-                        <span className="font-medium">{product.name}</span>
-                        <Badge variant="outline">
-                          {product.stock} left (min: {product.lowStockThreshold})
-                        </Badge>
-                      </div>
-                    ))}
+                     {lowStockProducts.map((product) => (
+                       <div key={product.id} className="flex justify-between items-center bg-white dark:bg-gray-800 rounded p-2">
+                         <span className="font-medium">{product.name}</span>
+                         <Badge variant="outline">
+                           {product.stock} left (min: {product.low_stock_threshold})
+                         </Badge>
+                       </div>
+                     ))}
                   </div>
                 </div>
               )}
@@ -269,24 +278,24 @@ export default function StockManagement() {
                         <TableCell className="font-medium">{product.name}</TableCell>
                         <TableCell className="font-mono text-sm">{product.sku}</TableCell>
                         <TableCell>
-                          <span className={`font-medium ${
-                            product.stock === 0 ? "text-red-600" :
-                            product.stock <= product.lowStockThreshold ? "text-yellow-600" :
-                            "text-green-600"
-                          }`}>
-                            {product.stock}
-                          </span>
-                        </TableCell>
-                        <TableCell>{product.lowStockThreshold}</TableCell>
-                        <TableCell>${(product.stock * product.cost).toLocaleString()}</TableCell>
-                        <TableCell>
-                          {product.stock === 0 ? (
-                            <Badge variant="destructive">Out of Stock</Badge>
-                          ) : product.stock <= product.lowStockThreshold ? (
-                            <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">Low Stock</Badge>
-                          ) : (
-                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">In Stock</Badge>
-                          )}
+                           <span className={`font-medium ${
+                             product.stock === 0 ? "text-red-600" :
+                             product.stock <= product.low_stock_threshold ? "text-yellow-600" :
+                             "text-green-600"
+                           }`}>
+                             {product.stock}
+                           </span>
+                         </TableCell>
+                         <TableCell>{product.low_stock_threshold}</TableCell>
+                         <TableCell>${(product.stock * (product.cost || 0)).toLocaleString()}</TableCell>
+                         <TableCell>
+                           {product.stock === 0 ? (
+                             <Badge variant="destructive">Out of Stock</Badge>
+                           ) : product.stock <= product.low_stock_threshold ? (
+                             <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">Low Stock</Badge>
+                           ) : (
+                             <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">In Stock</Badge>
+                           )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -323,9 +332,11 @@ export default function StockManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="in">Stock In</SelectItem>
-                  <SelectItem value="out">Stock Out</SelectItem>
-                  <SelectItem value="adjustment">Adjustments</SelectItem>
+                  <SelectItem value="purchase">Purchase</SelectItem>
+                  <SelectItem value="sale">Sale</SelectItem>
+                  <SelectItem value="adjustment">Adjustment</SelectItem>
+                  <SelectItem value="return">Return</SelectItem>
+                  <SelectItem value="transfer">Transfer</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -348,28 +359,28 @@ export default function StockManagement() {
                 <TableBody>
                   {filteredMovements.map((movement) => (
                     <TableRow key={movement.id}>
-                      <TableCell>{formatDate(movement.date)}</TableCell>
-                      <TableCell className="font-medium">{movement.productName}</TableCell>
+                      <TableCell>{formatDate(movement.movement_date)}</TableCell>
+                      <TableCell className="font-medium">{movement.product_name}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {getMovementIcon(movement.type)}
-                          {getMovementBadge(movement.type)}
+                          {getMovementIcon(movement.movement_type)}
+                          {getMovementBadge(movement.movement_type)}
                         </div>
                       </TableCell>
                       <TableCell>
                         <span className={`font-medium ${
-                          movement.type === 'in' ? 'text-green-600' : 
-                          movement.type === 'out' ? 'text-red-600' : 
+                          movement.movement_type === 'purchase' || movement.movement_type === 'return' ? 'text-green-600' : 
+                          movement.movement_type === 'sale' || movement.movement_type === 'transfer' ? 'text-red-600' : 
                           'text-yellow-600'
                         }`}>
-                          {movement.type === 'in' ? '+' : movement.type === 'out' ? '-' : ''}
-                          {Math.abs(movement.quantity)}
+                          {movement.quantity_change > 0 ? '+' : ''}
+                          {movement.quantity_change}
                         </span>
                       </TableCell>
-                      <TableCell>{movement.previousStock}</TableCell>
-                      <TableCell className="font-medium">{movement.newStock}</TableCell>
-                      <TableCell>{movement.reason}</TableCell>
-                      <TableCell>{movement.user}</TableCell>
+                      <TableCell>{movement.stock_before}</TableCell>
+                      <TableCell className="font-medium">{movement.stock_after}</TableCell>
+                      <TableCell>{movement.reason || '-'}</TableCell>
+                      <TableCell>-</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

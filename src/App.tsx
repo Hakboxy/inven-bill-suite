@@ -30,6 +30,7 @@ import UserManagement from "./pages/UserManagement";
 import Integrations from "./pages/Integrations";
 import GeneralSettings from "./pages/GeneralSettings";
 import NotFound from "./pages/NotFound";
+import PurchaseOrders from "./pages/PurchaseOrders";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ const App = () => (
                           <Route path="/products/add" element={<ProductCreate />} />
                           <Route path="/categories" element={<Categories />} />
                           <Route path="/inventory/stock" element={<StockManagement />} />
+                          <Route path="/purchase-orders" element={<PurchaseOrders />} />
                           <Route path="/invoices" element={<Invoices />} />
                           <Route path="/invoices/create" element={<InvoiceCreate />} />
                           <Route path="/payments" element={<Payments />} />
