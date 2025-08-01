@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Plus, Eye, Edit, Trash2, Package, Send, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,12 +9,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { usePurchaseOrders, PurchaseOrder } from '@/hooks/usePurchaseOrders';
+import { CreateEditPurchaseOrderModal } from '@/components/CreateEditPurchaseOrderModal';
 
 const PurchaseOrders = () => {
-  const navigate = useNavigate();
   const { purchaseOrders, loading, deletePurchaseOrder, updatePOStatus } = usePurchaseOrders();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [createEditModalOpen, setCreateEditModalOpen] = useState(false);
+  const [selectedPurchaseOrder, setSelectedPurchaseOrder] = useState<PurchaseOrder | null>(null);
 
   const getStatusBadge = (status: PurchaseOrder['status']) => {
     const variants = {
@@ -57,6 +58,16 @@ const PurchaseOrders = () => {
     } catch (error) {
       console.error('Error deleting purchase order:', error);
     }
+  };
+
+  const handleEdit = (purchaseOrder: PurchaseOrder) => {
+    setSelectedPurchaseOrder(purchaseOrder);
+    setCreateEditModalOpen(true);
+  };
+
+  const handleCreate = () => {
+    setSelectedPurchaseOrder(null);
+    setCreateEditModalOpen(true);
   };
 
   const formatDate = (dateString: string) => {
@@ -106,7 +117,7 @@ const PurchaseOrders = () => {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Purchase Orders</h1>
-        <Button onClick={() => navigate('/purchase-orders/create')} className="flex items-center gap-2">
+        <Button onClick={handleCreate} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Create Purchase Order
         </Button>
@@ -221,30 +232,23 @@ const PurchaseOrders = () => {
                     <TableCell>{getStatusBadge(po.status)}</TableCell>
                     <TableCell>{formatCurrency(po.total_amount)}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/purchase-orders/${po.id}`)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/purchase-orders/${po.id}/edit`)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {po.status === 'draft' && (
+                        <div className="flex items-center gap-2">
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
-                            onClick={() => handleStatusUpdate(po.id!, 'sent')}
+                            onClick={() => handleEdit(po)}
                           >
-                            Send
+                            <Edit className="h-4 w-4" />
                           </Button>
-                        )}
+                          {po.status === 'draft' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleStatusUpdate(po.id!, 'sent')}
+                            >
+                              Send
+                            </Button>
+                          )}
                         {po.status === 'sent' && (
                           <Button
                             variant="outline"
@@ -284,6 +288,12 @@ const PurchaseOrders = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <CreateEditPurchaseOrderModal
+        open={createEditModalOpen}
+        onOpenChange={setCreateEditModalOpen}
+        purchaseOrder={selectedPurchaseOrder}
+      />
     </div>
   );
 };
