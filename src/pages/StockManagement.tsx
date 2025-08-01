@@ -19,79 +19,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { 
   Plus,
   Search,
-  Filter,
   Download,
-  Upload,
   Package,
   AlertTriangle,
   TrendingDown,
   TrendingUp,
-  Minus
+  Minus,
+  Edit,
+  Trash2,
+  Settings
 } from "lucide-react"
 import { useProducts } from '@/hooks/useProducts';
-import { useStockMovements } from '@/hooks/useStockMovements';
-
-interface StockMovement {
-  id: string
-  productId: string
-  productName: string
-  type: 'in' | 'out' | 'adjustment'
-  quantity: number
-  previousStock: number
-  newStock: number
-  reason: string
-  date: string
-  user: string
-}
-
-const stockMovements: StockMovement[] = [
-  {
-    id: '1',
-    productId: '1',
-    productName: 'Wireless Bluetooth Headphones',
-    type: 'in',
-    quantity: 50,
-    previousStock: 150,
-    newStock: 200,
-    reason: 'Restock from supplier',
-    date: '2024-06-08',
-    user: 'John Doe'
-  },
-  {
-    id: '2',
-    productId: '2',
-    productName: 'Ergonomic Office Chair',
-    type: 'out',
-    quantity: 5,
-    previousStock: 50,
-    newStock: 45,
-    reason: 'Sale order #INV-001',
-    date: '2024-06-07',
-    user: 'System'
-  },
-  {
-    id: '3',
-    productId: '3',
-    productName: 'Smartphone Case',
-    type: 'adjustment',
-    quantity: -2,
-    previousStock: 7,
-    newStock: 5,
-    reason: 'Damaged items',
-    date: '2024-06-06',
-    user: 'Sarah Johnson'
-  },
-]
+import { useStockMovements, StockMovement } from '@/hooks/useStockMovements';
+import { StockAdjustmentModal } from '@/components/StockAdjustmentModal';
+import { EditStockMovementModal } from '@/components/EditStockMovementModal';
+import { useToast } from '@/hooks/use-toast';
 
 export default function StockManagement() {
   const { products, loading } = useProducts();
-  const { stockMovements } = useStockMovements();
+  const { stockMovements, deleteStockMovement, loading: movementsLoading } = useStockMovements();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("")
   const [movementTypeFilter, setMovementTypeFilter] = useState("all")
   const [activeTab, setActiveTab] = useState<'overview' | 'movements'>('overview')
+  const [stockAdjustmentOpen, setStockAdjustmentOpen] = useState(false)
+  const [editMovementOpen, setEditMovementOpen] = useState(false)
+  const [selectedMovement, setSelectedMovement] = useState<StockMovement | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [movementToDelete, setMovementToDelete] = useState<string | null>(null)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -145,6 +113,37 @@ export default function StockManagement() {
   const outOfStockProducts = products.filter(p => p.stock === 0)
   const totalStockValue = products.reduce((sum, p) => sum + (p.stock * (p.cost || 0)), 0)
 
+  const handleEditMovement = (movement: StockMovement) => {
+    setSelectedMovement(movement);
+    setEditMovementOpen(true);
+  };
+
+  const handleDeleteMovement = (movementId: string) => {
+    setMovementToDelete(movementId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteMovement = async () => {
+    if (!movementToDelete) return;
+    
+    try {
+      await deleteStockMovement(movementToDelete);
+      toast({
+        title: "Success",
+        description: "Stock movement deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete stock movement",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setMovementToDelete(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -158,8 +157,8 @@ export default function StockManagement() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={() => setStockAdjustmentOpen(true)}>
+            <Settings className="h-4 w-4 mr-2" />
             Stock Adjustment
           </Button>
         </div>
@@ -353,7 +352,7 @@ export default function StockManagement() {
                     <TableHead>Previous Stock</TableHead>
                     <TableHead>New Stock</TableHead>
                     <TableHead>Reason</TableHead>
-                    <TableHead>User</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -380,7 +379,26 @@ export default function StockManagement() {
                       <TableCell>{movement.stock_before}</TableCell>
                       <TableCell className="font-medium">{movement.stock_after}</TableCell>
                       <TableCell>{movement.reason || '-'}</TableCell>
-                      <TableCell>-</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditMovement(movement)}
+                            disabled={movementsLoading}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteMovement(movement.id!)}
+                            disabled={movementsLoading}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -395,6 +413,35 @@ export default function StockManagement() {
           </CardContent>
         </Card>
       )}
+      {/* Modals */}
+      <StockAdjustmentModal
+        open={stockAdjustmentOpen}
+        onOpenChange={setStockAdjustmentOpen}
+      />
+
+      <EditStockMovementModal
+        open={editMovementOpen}
+        onOpenChange={setEditMovementOpen}
+        movement={selectedMovement}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the stock movement record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteMovement}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
