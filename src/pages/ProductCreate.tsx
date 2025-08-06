@@ -1,6 +1,9 @@
 
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { supabase } from "@/integrations/supabase/client"
+import { useProducts } from "@/hooks/useProducts"
+import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -69,9 +72,12 @@ export default function ProductCreate() {
   const [activeTab, setActiveTab] = useState("basic")
   const [variants, setVariants] = useState<ProductVariant[]>([])
   const [images, setImages] = useState<File[]>([])
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
   const [keywordInput, setKeywordInput] = useState("")
   const { toast } = useToast()
+  const { createProduct } = useProducts()
+  const navigate = useNavigate()
   
   const form = useForm<ProductFormData>({
     defaultValues: {
@@ -84,20 +90,68 @@ export default function ProductCreate() {
     },
   })
 
+  const uploadImages = async (): Promise<string[]> => {
+    const uploadPromises = images.map(async (file) => {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random()}.${fileExt}`
+      const filePath = `products/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      const { data } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath)
+
+      return data.publicUrl
+    })
+
+    return Promise.all(uploadPromises)
+  }
+
   const onSubmit = async (data: ProductFormData) => {
     setIsSubmitting(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      console.log('Product created:', { ...data, variants, images })
+      // Upload images first
+      const imageUrls = await uploadImages()
+      
+      // Prepare product data for Supabase
+      const productData = {
+        name: data.name,
+        description: data.description,
+        sku: data.sku,
+        price: data.sellingPrice,
+        cost: data.costPrice,
+        stock: data.initialStock,
+        low_stock_threshold: data.lowStockThreshold,
+        status: data.status as 'active' | 'inactive' | 'out_of_stock',
+        image_url: imageUrls[0] || null, // Use first image as main image
+        category_id: null, // We'll need to handle category mapping
+        vendor_id: null,
+        weight: null,
+        dimensions: null,
+        barcode: null,
+        last_restocked: new Date().toISOString()
+      }
+
+      await createProduct(productData)
+      
       toast({
         title: "Success!",
         description: "Product created successfully.",
       })
-    } catch (error) {
+      
+      navigate('/products')
+    } catch (error: any) {
+      console.error('Error creating product:', error)
       toast({
         title: "Error",
-        description: "Failed to create product. Please try again.",
+        description: error.message || "Failed to create product. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -151,13 +205,17 @@ export default function ProductCreate() {
     form.setValue('searchKeywords', currentKeywords.filter(keyword => keyword !== keywordToRemove))
   }
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || [])
     setImages(prev => [...prev, ...files])
   }
 
   const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index))
+    // Also remove from uploaded URLs if it exists
+    if (uploadedImageUrls[index]) {
+      setUploadedImageUrls(prev => prev.filter((_, i) => i !== index))
+    }
   }
 
   const categories = [
