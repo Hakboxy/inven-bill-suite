@@ -1,6 +1,8 @@
 
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import { supabase } from "@/integrations/supabase/client"
 import { useProducts } from "@/hooks/useProducts"
 import { useNavigate } from "react-router-dom"
@@ -31,32 +33,34 @@ import { ArrowLeft, Save, Upload, Plus, X, Image as ImageIcon } from "lucide-rea
 import { Link } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
 
-interface ProductFormData {
+const productFormSchema = z.object({
   // Basic Info
-  name: string
-  description: string
-  category: string
-  brand: string
-  tags: string[]
-  status: 'active' | 'inactive' | 'draft'
+  name: z.string().min(1, "Product name is required"),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  brand: z.string().optional(),
+  tags: z.array(z.string()).default([]),
+  status: z.enum(['active', 'inactive', 'draft']).default('active'),
   
   // Pricing
-  costPrice: number
-  sellingPrice: number
-  taxRate: number
+  costPrice: z.number().min(0, "Cost price must be positive").default(0),
+  sellingPrice: z.number().min(0.01, "Selling price must be greater than 0"),
+  taxRate: z.number().min(0).max(100, "Tax rate must be between 0 and 100").default(0),
   
   // Inventory
-  sku: string
-  initialStock: number
-  lowStockThreshold: number
-  trackInventory: boolean
+  sku: z.string().min(1, "SKU is required"),
+  initialStock: z.number().min(0, "Initial stock must be positive").default(0),
+  lowStockThreshold: z.number().min(0, "Low stock threshold must be positive").default(10),
+  trackInventory: z.boolean().default(true),
   
   // SEO
-  metaTitle: string
-  metaDescription: string
-  urlSlug: string
-  searchKeywords: string[]
-}
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  urlSlug: z.string().optional(),
+  searchKeywords: z.array(z.string()).default([]),
+})
+
+type ProductFormData = z.infer<typeof productFormSchema>
 
 interface ProductVariant {
   id: string
@@ -80,6 +84,7 @@ export default function ProductCreate() {
   const navigate = useNavigate()
   
   const form = useForm<ProductFormData>({
+    resolver: zodResolver(productFormSchema),
     defaultValues: {
       status: 'active',
       lowStockThreshold: 10,
@@ -87,6 +92,9 @@ export default function ProductCreate() {
       taxRate: 0,
       tags: [],
       searchKeywords: [],
+      costPrice: 0,
+      sellingPrice: 0,
+      initialStock: 0,
     },
   })
 
