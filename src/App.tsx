@@ -31,6 +31,7 @@ import Integrations from "./pages/Integrations";
 import GeneralSettings from "./pages/GeneralSettings";
 import NotFound from "./pages/NotFound";
 import PurchaseOrders from "./pages/PurchaseOrders";
+import Analytics from "./pages/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
                       <main className="flex-1 p-6">
                         <Routes>
                           <Route path="/" element={<Dashboard />} />
+                          <Route path="/analytics" element={<Analytics />} />
                           <Route path="/products" element={<Products />} />
                           <Route path="/products/create" element={<ProductCreate />} />
                           <Route path="/products/add" element={<ProductCreate />} />
