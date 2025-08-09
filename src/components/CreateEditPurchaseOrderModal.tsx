@@ -49,7 +49,7 @@ const purchaseOrderItemSchema = z.object({
 
 const purchaseOrderSchema = z.object({
   vendor_id: z.string().min(1, 'Vendor is required'),
-  vendor_name: z.string(),
+  vendor_name: z.string().min(1, 'Vendor is required'),
   order_date: z.date(),
   expected_delivery_date: z.date().optional(),
   status: z.enum(['draft', 'sent', 'received', 'cancelled']),
@@ -224,9 +224,10 @@ export function CreateEditPurchaseOrderModal({
         description: `Purchase order ${purchaseOrder ? 'updated' : 'created'} successfully`,
       });
     } catch (error) {
+      console.error('Purchase order submit error:', error);
       toast({
         title: "Error",
-        description: `Failed to ${purchaseOrder ? 'update' : 'create'} purchase order`,
+        description: error instanceof Error ? error.message : `Failed to ${purchaseOrder ? 'update' : 'create'} purchase order`,
         variant: "destructive",
       });
     }

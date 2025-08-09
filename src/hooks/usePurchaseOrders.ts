@@ -93,9 +93,10 @@ export const usePurchaseOrders = () => {
         .from('purchase_orders')
         .insert([purchaseOrderPayload])
         .select()
-        .single();
+        .maybeSingle();
 
       if (poError) throw poError;
+      if (!newPO) throw new Error('Failed to create purchase order');
 
       // Create purchase order items if provided
       if (orderData.items && orderData.items.length > 0) {
