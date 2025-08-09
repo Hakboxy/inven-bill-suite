@@ -22,7 +22,7 @@ export function CreateCustomerModal({ open, onOpenChange, onSubmit }: CreateCust
       email: '',
       phone: '',
       address: '',
-      customerGroup: 'Standard',
+      customer_group_id: undefined,
       status: 'active'
     }
   })
@@ -97,15 +97,16 @@ export function CreateCustomerModal({ open, onOpenChange, onSubmit }: CreateCust
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="customerGroup">Customer Group</Label>
-            <Select onValueChange={(value) => setValue('customerGroup', value)} defaultValue="Standard">
+            <Label htmlFor="customer_group_id">Customer Group</Label>
+            <Select onValueChange={(value) => setValue('customer_group_id', value || undefined)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select customer group" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Standard">Standard</SelectItem>
-                <SelectItem value="Premium">Premium</SelectItem>
-                <SelectItem value="VIP">VIP</SelectItem>
+                <SelectItem value="">None</SelectItem>
+                <SelectItem value="standard">Standard</SelectItem>
+                <SelectItem value="premium">Premium</SelectItem>
+                <SelectItem value="vip">VIP</SelectItem>
               </SelectContent>
             </Select>
           </div>
