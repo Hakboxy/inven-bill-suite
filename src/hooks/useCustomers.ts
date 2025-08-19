@@ -5,15 +5,15 @@ import { useToast } from '@/hooks/use-toast'
 export interface Customer {
   id: string
   name: string
-  email?: string
-  phone?: string
-  company?: string
-  address?: string
+  email: string | null
+  phone: string | null
+  company: string | null
+  address: string | null
   status: 'active' | 'inactive'
   total_orders: number
   total_spent: number
-  last_order_date?: string
-  customer_group_id?: string
+  last_order_date: string | null
+  customer_group_id: string | null
   created_at: string
   updated_at: string
   customer_groups?: { name: string }

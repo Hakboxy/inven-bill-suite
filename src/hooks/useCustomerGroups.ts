@@ -5,8 +5,8 @@ import { useToast } from '@/hooks/use-toast'
 export interface CustomerGroup {
   id: string
   name: string
-  description?: string
-  discount_percentage?: number
+  description: string | null
+  discount_percentage: number | null
   created_at: string
   updated_at: string
 }
