@@ -74,11 +74,13 @@ export const useSalesOrders = () => {
       const orderNumber = await generateOrderNumber();
       const { data: { user } } = await supabase.auth.getUser();
 
+      // Separate items from order data
+      const { items, ...orderPayload } = orderData;
       const payload = {
-        ...orderData,
+        ...orderPayload,
         order_number: orderNumber,
         created_by: user?.id,
-      } as any;
+      };
 
       const { data: newOrder, error: orderError } = await supabase
         .from('sales_orders')
@@ -89,8 +91,8 @@ export const useSalesOrders = () => {
       if (orderError) throw orderError;
       if (!newOrder) throw new Error('Failed to create sales order');
 
-      if (orderData.items && orderData.items.length > 0) {
-        const itemsPayload = orderData.items.map((item) => ({
+      if (items && items.length > 0) {
+        const itemsPayload = items.map((item) => ({
           ...item,
           sales_order_id: newOrder.id,
         }));
