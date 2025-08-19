@@ -2,37 +2,35 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 
-export interface Vendor {
+export interface CustomerGroup {
   id: string
   name: string
-  contact_person?: string
-  email?: string
-  phone?: string
-  address?: string
+  description?: string
+  discount_percentage?: number
   created_at: string
   updated_at: string
 }
 
-export const useVendors = () => {
-  const [vendors, setVendors] = useState<Vendor[]>([])
+export const useCustomerGroups = () => {
+  const [customerGroups, setCustomerGroups] = useState<CustomerGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
-  const fetchVendors = async () => {
+  const fetchCustomerGroups = async () => {
     try {
       setLoading(true)
       const { data, error } = await supabase
-        .from('vendors')
+        .from('customer_groups')
         .select('*')
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setVendors(data || [])
+      setCustomerGroups(data || [])
     } catch (err: any) {
       setError(err.message)
       toast({
-        title: "Error fetching vendors",
+        title: "Error fetching customer groups",
         description: err.message,
         variant: "destructive"
       })
@@ -41,35 +39,25 @@ export const useVendors = () => {
     }
   }
 
-  const createVendor = async (vendorData: any) => {
+  const createCustomerGroup = async (groupData: Omit<CustomerGroup, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      // Map form data to database schema
-      const dbVendorData = {
-        name: vendorData.vendorName,
-        contact_person: vendorData.contactPerson,
-        email: vendorData.email,
-        phone: vendorData.phone,
-        address: vendorData.address,
-        // Note: status field doesn't exist in vendors table according to schema
-      }
-
       const { data, error } = await supabase
-        .from('vendors')
-        .insert([dbVendorData])
+        .from('customer_groups')
+        .insert([groupData])
         .select()
         .single()
 
       if (error) throw error
 
-      await fetchVendors()
+      await fetchCustomerGroups()
       toast({
-        title: "Vendor created",
-        description: "Vendor has been created successfully"
+        title: "Customer group created",
+        description: "Customer group has been created successfully"
       })
       return data
     } catch (err: any) {
       toast({
-        title: "Error creating vendor",
+        title: "Error creating customer group",
         description: err.message,
         variant: "destructive"
       })
@@ -77,10 +65,10 @@ export const useVendors = () => {
     }
   }
 
-  const updateVendor = async (id: string, updates: Partial<Vendor>) => {
+  const updateCustomerGroup = async (id: string, updates: Partial<CustomerGroup>) => {
     try {
       const { data, error } = await supabase
-        .from('vendors')
+        .from('customer_groups')
         .update(updates)
         .eq('id', id)
         .select()
@@ -88,15 +76,15 @@ export const useVendors = () => {
 
       if (error) throw error
 
-      await fetchVendors()
+      await fetchCustomerGroups()
       toast({
-        title: "Vendor updated",
-        description: "Vendor has been updated successfully"
+        title: "Customer group updated",
+        description: "Customer group has been updated successfully"
       })
       return data
     } catch (err: any) {
       toast({
-        title: "Error updating vendor",
+        title: "Error updating customer group",
         description: err.message,
         variant: "destructive"
       })
@@ -104,23 +92,23 @@ export const useVendors = () => {
     }
   }
 
-  const deleteVendor = async (id: string) => {
+  const deleteCustomerGroup = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('vendors')
+        .from('customer_groups')
         .delete()
         .eq('id', id)
 
       if (error) throw error
 
-      await fetchVendors()
+      await fetchCustomerGroups()
       toast({
-        title: "Vendor deleted",
-        description: "Vendor has been deleted successfully"
+        title: "Customer group deleted",
+        description: "Customer group has been deleted successfully"
       })
     } catch (err: any) {
       toast({
-        title: "Error deleting vendor",
+        title: "Error deleting customer group",
         description: err.message,
         variant: "destructive"
       })
@@ -130,19 +118,19 @@ export const useVendors = () => {
 
   // Set up real-time subscription
   useEffect(() => {
-    fetchVendors()
+    fetchCustomerGroups()
 
     const channel = supabase
-      .channel('vendors-changes')
+      .channel('customer-groups-changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'vendors'
+          table: 'customer_groups'
         },
         () => {
-          fetchVendors()
+          fetchCustomerGroups()
         }
       )
       .subscribe()
@@ -153,12 +141,12 @@ export const useVendors = () => {
   }, [])
 
   return {
-    vendors,
+    customerGroups,
     loading,
     error,
-    createVendor,
-    updateVendor,
-    deleteVendor,
-    refetch: fetchVendors
+    createCustomerGroup,
+    updateCustomerGroup,
+    deleteCustomerGroup,
+    refetch: fetchCustomerGroups
   }
 }

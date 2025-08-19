@@ -56,11 +56,22 @@ export const useCustomers = () => {
     }
   }
 
-  const createCustomer = async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'total_orders' | 'total_spent'>) => {
+  const createCustomer = async (customerData: any) => {
     try {
+      // Map form data to database schema
+      const dbCustomerData = {
+        name: customerData.name,
+        email: customerData.email,
+        phone: customerData.phone,
+        company: customerData.company,
+        address: customerData.address,
+        status: customerData.status,
+        customer_group_id: customerData.customerGroup, // Map customerGroup to customer_group_id
+      }
+
       const { data, error } = await supabase
         .from('customers')
-        .insert([customerData])
+        .insert([dbCustomerData])
         .select()
         .single()
 
