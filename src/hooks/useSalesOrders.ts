@@ -44,7 +44,7 @@ export const useSalesOrders = () => {
 
       const { data, error } = await supabase
         .from('sales_orders')
-        .select(`*, items:sales_order_items(*)`)
+        .select(`*, items:sales_order_items!sales_order_items_sales_order_id_fkey(*)`)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
