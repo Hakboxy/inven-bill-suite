@@ -82,8 +82,9 @@ export const usePurchaseOrders = () => {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
+      const { items, ...orderWithoutItems } = orderData;
       const purchaseOrderPayload = {
-        ...orderData,
+        ...orderWithoutItems,
         po_number: poNumber,
         created_by: user?.id,
       };
@@ -99,8 +100,8 @@ export const usePurchaseOrders = () => {
       if (!newPO) throw new Error('Failed to create purchase order');
 
       // Create purchase order items if provided
-      if (orderData.items && orderData.items.length > 0) {
-        const itemsPayload = orderData.items.map(item => ({
+      if (items && items.length > 0) {
+        const itemsPayload = items.map(item => ({
           ...item,
           purchase_order_id: newPO.id,
         }));
