@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, Filter, Plus, FileText } from "lucide-react"
+import { Search, Filter, Plus, FileText, Loader2 } from "lucide-react"
 import { CreateFinancialReportModal } from "@/components/CreateFinancialReportModal"
+import { useFinancialReports } from "@/hooks/useFinancialReports"
 
 const FinancialReports = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -15,45 +16,22 @@ const FinancialReports = () => {
   const [statusFilter, setStatusFilter] = useState('all')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
-  // Mock data
-  const financialReports = [
-    {
-      id: 1,
-      reportName: "Q4 2024 Income Statement",
-      reportType: "Income Statement",
-      period: "Q4 2024",
-      createdDate: "2024-01-15",
-      status: "Completed"
-    },
-    {
-      id: 2,
-      reportName: "Annual Balance Sheet 2024",
-      reportType: "Balance Sheet",
-      period: "2024",
-      createdDate: "2024-01-10",
-      status: "In Progress"
-    },
-    {
-      id: 3,
-      reportName: "Monthly Cash Flow - Dec 2024",
-      reportType: "Cash Flow",
-      period: "December 2024",
-      createdDate: "2024-01-05",
-      status: "Completed"
-    }
-  ]
+  const { reports, loading, error, createReport } = useFinancialReports()
 
-  const filteredReports = financialReports.filter(report => {
-    const matchesSearch = report.reportName.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = reportTypeFilter === 'all' || report.reportType === reportTypeFilter
+  const filteredReports = reports.filter(report => {
+    const matchesSearch = report.report_name.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesType = reportTypeFilter === 'all' || report.report_type === reportTypeFilter
     const matchesStatus = statusFilter === 'all' || report.status === statusFilter
     return matchesSearch && matchesType && matchesStatus
   })
 
-  const handleCreateReport = (data: any) => {
-    console.log('Creating financial report:', data)
-    // Handle report creation logic here
-    setIsCreateModalOpen(false)
+  const handleCreateReport = async (data: any) => {
+    try {
+      await createReport(data)
+      setIsCreateModalOpen(false)
+    } catch (error) {
+      console.error('Failed to create report:', error)
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -133,15 +111,36 @@ const FinancialReports = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredReports.map((report) => (
-                <TableRow key={report.id}>
-                  <TableCell className="font-medium">{report.reportName}</TableCell>
-                  <TableCell>{report.reportType}</TableCell>
-                  <TableCell>{report.period}</TableCell>
-                  <TableCell>{report.createdDate}</TableCell>
-                  <TableCell>{getStatusBadge(report.status)}</TableCell>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                    <p className="mt-2 text-muted-foreground">Loading reports...</p>
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-red-500">
+                    Error loading reports: {error}
+                  </TableCell>
+                </TableRow>
+              ) : filteredReports.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    No financial reports found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredReports.map((report) => (
+                  <TableRow key={report.id}>
+                    <TableCell className="font-medium">{report.report_name}</TableCell>
+                    <TableCell>{report.report_type}</TableCell>
+                    <TableCell>{report.period}</TableCell>
+                    <TableCell>{new Date(report.created_at || '').toLocaleDateString()}</TableCell>
+                    <TableCell>{getStatusBadge(report.status)}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

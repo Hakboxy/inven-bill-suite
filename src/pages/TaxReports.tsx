@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, Filter, Plus, Calculator } from "lucide-react"
+import { Search, Filter, Plus, Calculator, Loader2 } from "lucide-react"
 import { CreateTaxReportModal } from "@/components/CreateTaxReportModal"
+import { useTaxReports } from "@/hooks/useTaxReports"
 
 const TaxReports = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -15,45 +16,22 @@ const TaxReports = () => {
   const [statusFilter, setStatusFilter] = useState('all')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
-  // Mock data
-  const taxReports = [
-    {
-      id: 1,
-      reportName: "Q4 2024 VAT Report",
-      taxType: "VAT",
-      filingPeriod: "Q4 2024",
-      createdDate: "2024-01-15",
-      status: "Filed"
-    },
-    {
-      id: 2,
-      reportName: "Annual Income Tax 2024",
-      taxType: "Income Tax",
-      filingPeriod: "2024",
-      createdDate: "2024-01-10",
-      status: "In Progress"
-    },
-    {
-      id: 3,
-      reportName: "GST Return - December 2024",
-      taxType: "GST",
-      filingPeriod: "December 2024",
-      createdDate: "2024-01-05",
-      status: "Filed"
-    }
-  ]
+  const { reports, loading, error, createReport } = useTaxReports()
 
-  const filteredReports = taxReports.filter(report => {
-    const matchesSearch = report.reportName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredReports = reports.filter(report => {
+    const matchesSearch = report.report_name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesType = taxTypeFilter === 'all' || report.taxType === taxTypeFilter
     const matchesStatus = statusFilter === 'all' || report.status === statusFilter
     return matchesSearch && matchesType && matchesStatus
   })
 
-  const handleCreateReport = (data: any) => {
-    console.log('Creating tax report:', data)
-    // Handle report creation logic here
-    setIsCreateModalOpen(false)
+  const handleCreateReport = async (data: any) => {
+    try {
+      await createReport(data)
+      setIsCreateModalOpen(false)
+    } catch (error) {
+      console.error('Failed to create report:', error)
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -134,15 +112,36 @@ const TaxReports = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredReports.map((report) => (
-                <TableRow key={report.id}>
-                  <TableCell className="font-medium">{report.reportName}</TableCell>
-                  <TableCell>{report.taxType}</TableCell>
-                  <TableCell>{report.filingPeriod}</TableCell>
-                  <TableCell>{report.createdDate}</TableCell>
-                  <TableCell>{getStatusBadge(report.status)}</TableCell>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                    <p className="mt-2 text-muted-foreground">Loading reports...</p>
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-red-500">
+                    Error loading reports: {error}
+                  </TableCell>
+                </TableRow>
+              ) : filteredReports.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    No tax reports found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredReports.map((report) => (
+                  <TableRow key={report.id}>
+                    <TableCell className="font-medium">{report.report_name}</TableCell>
+                    <TableCell>{report.taxType}</TableCell>
+                    <TableCell>{report.filingPeriod}</TableCell>
+                    <TableCell>{new Date(report.created_at || '').toLocaleDateString()}</TableCell>
+                    <TableCell>{getStatusBadge(report.status || 'Draft')}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

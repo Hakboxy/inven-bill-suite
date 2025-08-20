@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, Filter, Plus, Package } from "lucide-react"
+import { Search, Filter, Plus, Package, Loader2 } from "lucide-react"
 import { CreateInventoryReportModal } from "@/components/CreateInventoryReportModal"
+import { useInventoryReports } from "@/hooks/useInventoryReports"
 
 const InventoryReports = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -14,42 +15,22 @@ const InventoryReports = () => {
   const [reportTypeFilter, setReportTypeFilter] = useState('all')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
-  // Mock data
-  const inventoryReports = [
-    {
-      id: 1,
-      reportName: "Monthly Stock Summary - Jan 2024",
-      warehouse: "Main Warehouse",
-      reportType: "Stock Summary",
-      createdDate: "2024-01-15"
-    },
-    {
-      id: 2,
-      reportName: "Low Stock Alert Report",
-      warehouse: "Secondary Warehouse",
-      reportType: "Low Stock",
-      createdDate: "2024-01-10"
-    },
-    {
-      id: 3,
-      reportName: "Stock Movement - December 2024",
-      warehouse: "Main Warehouse",
-      reportType: "Stock Movement",
-      createdDate: "2024-01-05"
-    }
-  ]
+  const { reports, loading, error, createReport } = useInventoryReports()
 
-  const filteredReports = inventoryReports.filter(report => {
-    const matchesSearch = report.reportName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredReports = reports.filter(report => {
+    const matchesSearch = report.report_name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesWarehouse = warehouseFilter === 'all' || report.warehouse === warehouseFilter
-    const matchesType = reportTypeFilter === 'all' || report.reportType === reportTypeFilter
+    const matchesType = reportTypeFilter === 'all' || report.report_type === reportTypeFilter
     return matchesSearch && matchesWarehouse && matchesType
   })
 
-  const handleCreateReport = (data: any) => {
-    console.log('Creating inventory report:', data)
-    // Handle report creation logic here
-    setIsCreateModalOpen(false)
+  const handleCreateReport = async (data: any) => {
+    try {
+      await createReport(data)
+      setIsCreateModalOpen(false)
+    } catch (error) {
+      console.error('Failed to create report:', error)
+    }
   }
 
   return (
@@ -123,14 +104,35 @@ const InventoryReports = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredReports.map((report) => (
-                <TableRow key={report.id}>
-                  <TableCell className="font-medium">{report.reportName}</TableCell>
-                  <TableCell>{report.warehouse}</TableCell>
-                  <TableCell>{report.reportType}</TableCell>
-                  <TableCell>{report.createdDate}</TableCell>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                    <p className="mt-2 text-muted-foreground">Loading reports...</p>
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8 text-red-500">
+                    Error loading reports: {error}
+                  </TableCell>
+                </TableRow>
+              ) : filteredReports.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    No inventory reports found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredReports.map((report) => (
+                  <TableRow key={report.id}>
+                    <TableCell className="font-medium">{report.report_name}</TableCell>
+                    <TableCell>{report.warehouse}</TableCell>
+                    <TableCell>{report.report_type}</TableCell>
+                    <TableCell>{new Date(report.created_at || '').toLocaleDateString()}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
