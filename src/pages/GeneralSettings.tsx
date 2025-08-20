@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -7,35 +7,35 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Settings as SettingsIcon, Save, Globe, Clock, Bell, Palette } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useAppSettings } from "@/hooks/useAppSettings"
+import { useTheme } from "@/components/theme-provider"
 
 const GeneralSettings = () => {
   const { toast } = useToast()
-  const [settings, setSettings] = useState({
-    language: 'en',
-    currency: 'USD',
-    timezone: 'America/New_York',
-    dateFormat: 'MM/DD/YYYY',
-    timeFormat: '12h',
-    theme: 'system',
-    emailNotifications: true,
-    pushNotifications: false,
-    marketingEmails: true,
-    systemUpdates: true
-  })
+  const { theme, setTheme } = useTheme()
+  const { settings, saveAllSettings, loading } = useAppSettings()
+  const [localSettings, setLocalSettings] = useState(settings)
+
+  useEffect(() => {
+    setLocalSettings(settings)
+  }, [settings])
+
+  // Sync theme changes with the theme provider
+  useEffect(() => {
+    if (localSettings.theme !== theme) {
+      setTheme(localSettings.theme as 'light' | 'dark' | 'system')
+    }
+  }, [localSettings.theme, theme, setTheme])
 
   const handleSettingChange = (key: string, value: any) => {
-    setSettings(prev => ({
+    setLocalSettings(prev => ({
       ...prev,
       [key]: value
     }))
   }
 
-  const handleSaveSettings = () => {
-    console.log('Saving general settings:', settings)
-    toast({
-      title: "Settings Saved",
-      description: "Your preferences have been updated successfully.",
-    })
+  const handleSaveSettings = async () => {
+    await saveAllSettings(localSettings)
   }
 
   return (
@@ -47,9 +47,9 @@ const GeneralSettings = () => {
             Configure system-wide preferences and options
           </p>
         </div>
-        <Button onClick={handleSaveSettings}>
+        <Button onClick={handleSaveSettings} disabled={loading}>
           <Save className="mr-2 h-4 w-4" />
-          Save Settings
+          {loading ? 'Saving...' : 'Save Settings'}
         </Button>
       </div>
 
@@ -68,7 +68,7 @@ const GeneralSettings = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="language">Language</Label>
-                <Select value={settings.language} onValueChange={(value) => handleSettingChange('language', value)}>
+                <Select value={localSettings.language} onValueChange={(value) => handleSettingChange('language', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
@@ -83,7 +83,7 @@ const GeneralSettings = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="currency">Currency</Label>
-                <Select value={settings.currency} onValueChange={(value) => handleSettingChange('currency', value)}>
+                <Select value={localSettings.currency} onValueChange={(value) => handleSettingChange('currency', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
@@ -99,7 +99,7 @@ const GeneralSettings = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="timezone">Timezone</Label>
-              <Select value={settings.timezone} onValueChange={(value) => handleSettingChange('timezone', value)}>
+              <Select value={localSettings.timezone} onValueChange={(value) => handleSettingChange('timezone', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
@@ -132,7 +132,7 @@ const GeneralSettings = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="dateFormat">Date Format</Label>
-                <Select value={settings.dateFormat} onValueChange={(value) => handleSettingChange('dateFormat', value)}>
+                <Select value={localSettings.dateFormat} onValueChange={(value) => handleSettingChange('dateFormat', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select date format" />
                   </SelectTrigger>
@@ -146,7 +146,7 @@ const GeneralSettings = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="timeFormat">Time Format</Label>
-                <Select value={settings.timeFormat} onValueChange={(value) => handleSettingChange('timeFormat', value)}>
+                <Select value={localSettings.timeFormat} onValueChange={(value) => handleSettingChange('timeFormat', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select time format" />
                   </SelectTrigger>
@@ -173,7 +173,7 @@ const GeneralSettings = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="theme">Theme</Label>
-              <Select value={settings.theme} onValueChange={(value) => handleSettingChange('theme', value)}>
+              <Select value={localSettings.theme} onValueChange={(value) => handleSettingChange('theme', value)}>
                 <SelectTrigger className="w-full md:w-[250px]">
                   <SelectValue placeholder="Select theme" />
                 </SelectTrigger>
@@ -208,7 +208,7 @@ const GeneralSettings = () => {
                 </div>
                 <Switch
                   id="emailNotifications"
-                  checked={settings.emailNotifications}
+                  checked={localSettings.emailNotifications}
                   onCheckedChange={(checked) => handleSettingChange('emailNotifications', checked)}
                 />
               </div>
@@ -221,7 +221,7 @@ const GeneralSettings = () => {
                 </div>
                 <Switch
                   id="pushNotifications"
-                  checked={settings.pushNotifications}
+                  checked={localSettings.pushNotifications}
                   onCheckedChange={(checked) => handleSettingChange('pushNotifications', checked)}
                 />
               </div>
@@ -234,7 +234,7 @@ const GeneralSettings = () => {
                 </div>
                 <Switch
                   id="marketingEmails"
-                  checked={settings.marketingEmails}
+                  checked={localSettings.marketingEmails}
                   onCheckedChange={(checked) => handleSettingChange('marketingEmails', checked)}
                 />
               </div>
@@ -247,7 +247,7 @@ const GeneralSettings = () => {
                 </div>
                 <Switch
                   id="systemUpdates"
-                  checked={settings.systemUpdates}
+                  checked={localSettings.systemUpdates}
                   onCheckedChange={(checked) => handleSettingChange('systemUpdates', checked)}
                 />
               </div>

@@ -1,25 +1,38 @@
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building2, Upload, Save } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useCompanySettings } from "@/hooks/useCompanySettings"
 
 const CompanySettings = () => {
   const { toast } = useToast()
+  const { settings, saveSettings, uploadLogo, loading } = useCompanySettings()
+  
+  // Local state for form fields
   const [companyData, setCompanyData] = useState({
-    name: 'InvenBill Corporation',
-    street: '123 Business Ave',
-    city: 'New York',
-    state: 'NY',
-    zip: '10001',
-    country: 'United States',
-    email: 'contact@invenbill.com',
-    phone: '+1 (555) 123-4567',
-    taxId: 'TAX-123456789'
+    name: '',
+    email: '',
+    phone: '',
+    address: '', 
+    taxId: '',
+    logoUrl: null as string | null
   })
+
+  // Update local state when settings are loaded
+  useEffect(() => {
+    setCompanyData({
+      name: settings.company_name || '',
+      email: settings.company_email || '',
+      phone: settings.company_phone || '',
+      address: settings.company_address || '',
+      taxId: settings.tax_id || '',
+      logoUrl: settings.logo_url
+    })
+  }, [settings])
 
   const handleInputChange = (field: string, value: string) => {
     setCompanyData(prev => ({
@@ -28,22 +41,20 @@ const CompanySettings = () => {
     }))
   }
 
-  const handleSaveSettings = () => {
-    console.log('Saving company settings:', companyData)
-    toast({
-      title: "Settings Saved",
-      description: "Company settings have been updated successfully.",
+  const handleSaveSettings = async () => {
+    await saveSettings({
+      company_name: companyData.name,
+      company_email: companyData.email || null,
+      company_phone: companyData.phone || null,
+      company_address: companyData.address || null,
+      tax_id: companyData.taxId || null
     })
   }
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      console.log('Logo uploaded:', file.name)
-      toast({
-        title: "Logo Uploaded",
-        description: `Logo "${file.name}" has been uploaded successfully.`,
-      })
+      await uploadLogo(file)
     }
   }
 
@@ -56,9 +67,9 @@ const CompanySettings = () => {
             Manage your company information and details
           </p>
         </div>
-        <Button onClick={handleSaveSettings}>
+        <Button onClick={handleSaveSettings} disabled={loading}>
           <Save className="mr-2 h-4 w-4" />
-          Save Settings
+          {loading ? 'Saving...' : 'Save Settings'}
         </Button>
       </div>
 
@@ -87,8 +98,16 @@ const CompanySettings = () => {
               <div className="space-y-2">
                 <Label htmlFor="logo-upload">Company Logo</Label>
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                    <Building2 className="h-8 w-8 text-muted-foreground" />
+                  <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                    {companyData.logoUrl ? (
+                      <img 
+                        src={companyData.logoUrl} 
+                        alt="Company Logo" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Building2 className="h-8 w-8 text-muted-foreground" />
+                    )}
                   </div>
                   <div>
                     <Input
@@ -97,13 +116,15 @@ const CompanySettings = () => {
                       accept="image/*"
                       onChange={handleLogoUpload}
                       className="hidden"
+                      disabled={loading}
                     />
                     <Button
                       variant="outline"
                       onClick={() => document.getElementById('logo-upload')?.click()}
+                      disabled={loading}
                     >
                       <Upload className="mr-2 h-4 w-4" />
-                      Upload Logo
+                      {loading ? 'Uploading...' : 'Upload Logo'}
                     </Button>
                   </div>
                 </div>
@@ -121,48 +142,13 @@ const CompanySettings = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="street">Street Address</Label>
+              <Label htmlFor="address">Company Address</Label>
               <Input
-                id="street"
-                value={companyData.street}
-                onChange={(e) => handleInputChange('street', e.target.value)}
+                id="address"
+                value={companyData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                placeholder="Full company address"
               />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  value={companyData.city}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
-                <Input
-                  id="state"
-                  value={companyData.state}
-                  onChange={(e) => handleInputChange('state', e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="zip">ZIP Code</Label>
-                <Input
-                  id="zip"
-                  value={companyData.zip}
-                  onChange={(e) => handleInputChange('zip', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
-                <Input
-                  id="country"
-                  value={companyData.country}
-                  onChange={(e) => handleInputChange('country', e.target.value)}
-                />
-              </div>
             </div>
           </CardContent>
         </Card>
